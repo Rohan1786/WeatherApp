@@ -1,9 +1,9 @@
-import requests
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponseRedirect
 from django.urls import reverse
 from .models import City
 from .forms import CityForm
+import requests
 
 def index(request):
     url = 'http://api.openweathermap.org/data/2.5/weather?q={}&units=metric&appid=271d1234d3f497eed5b1d80a07b3fcd1'
@@ -26,6 +26,7 @@ def index(request):
             r = requests.get(url.format(city.name)).json()
             if 'main' in r and 'temp' in r['main'] and 'weather' in r and len(r['weather']) > 0:
                 city_weather = {
+                    'id': city.id,
                     'city': city.name,
                     'temperature': r['main']['temp'],
                     'description': r['weather'][0]['description'],
@@ -33,6 +34,7 @@ def index(request):
                 }
             else:
                 city_weather = {
+                    'id': city.id,
                     'city': city.name,
                     'temperature': 'N/A',
                     'description': 'N/A',
@@ -40,6 +42,7 @@ def index(request):
                 }
         except requests.exceptions.RequestException as e:
             city_weather = {
+                'id': city.id,
                 'city': city.name,
                 'temperature': 'N/A',
                 'description': f'Error: {e}',
@@ -52,6 +55,7 @@ def index(request):
 
     return render(request, 'weather/weather.html', context)
 
-def delete_everything(request):
-    City.objects.all().delete()
-    return HttpResponseRedirect(reverse('index'))
+def delete_city(request, city_id):
+    city = get_object_or_404(City, id=city_id)
+    city.delete()
+    return redirect('index')
