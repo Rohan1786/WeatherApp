@@ -8,16 +8,21 @@ import requests
 def index(request):
     url = 'http://api.openweathermap.org/data/2.5/weather?q={}&units=metric&appid=271d1234d3f497eed5b1d80a07b3fcd1'
 
+    query = request.GET.get('q')
+    if query:
+        cities = City.objects.filter(name__icontains=query).order_by('name')
+    else:
+        cities = City.objects.all().order_by('name')
+
     if request.method == 'POST':
         form = CityForm(request.POST)
         if form.is_valid():
             city_name = form.cleaned_data['name']
             if not City.objects.filter(name=city_name).exists():
                 form.save()
+        return redirect('index')
 
     form = CityForm()
-
-    cities = City.objects.all()
 
     weather_data = []
 
@@ -51,7 +56,7 @@ def index(request):
 
         weather_data.append(city_weather)
 
-    context = {'weather_data': weather_data, 'form': form}
+    context = {'weather_data': weather_data, 'form': form, 'query': query}
 
     return render(request, 'weather/weather.html', context)
 
