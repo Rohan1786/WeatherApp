@@ -10,9 +10,12 @@ def index(request):
 
     query = request.GET.get('q')
     if query:
-        cities = City.objects.filter(name__icontains=query).order_by('name')
+        searched_cities = City.objects.filter(name__icontains=query).order_by('name')
     else:
-        cities = City.objects.all().order_by('name')
+        searched_cities = City.objects.none()
+
+    all_cities = City.objects.all().order_by('name')
+    remaining_cities = [city for city in all_cities if city not in searched_cities]
 
     if request.method == 'POST':
         form = CityForm(request.POST)
@@ -26,7 +29,7 @@ def index(request):
 
     weather_data = []
 
-    for city in cities:
+    for city in list(searched_cities) + remaining_cities:
         try:
             r = requests.get(url.format(city.name)).json()
             if 'main' in r and 'temp' in r['main'] and 'weather' in r and len(r['weather']) > 0:
